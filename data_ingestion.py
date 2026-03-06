@@ -31,7 +31,7 @@ def main():
 
     print('\nLoading share prices...')
     try:
-        pd_share_prices = sf.load_shareprices(market='us')
+        pd_share_prices = sf.load_shareprices(variant='daily')
         pl_share_prices = pl.DataFrame(pd_share_prices)
     except Exception as e:
         print('Failed to load share prices. Raising exception.')
