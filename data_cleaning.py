@@ -1,5 +1,6 @@
 import tomllib
 from pathlib import Path
+import os
 import polars as pl
 
 RAW_PARQUET_DIR = os.path.join('ETL', 'data', 'raw', 'parquet')
@@ -21,6 +22,14 @@ def main():
         raise e
     print('Successfully loaded configuration.')
 
+    print('\nCreating or reading enriched directory...')
+    try:
+        os.makedirs(ENRICHED_PARQUET_DIR, exist_ok=True)
+    except Exception as e:
+        print('Failed to create enriched directory. Raising exception...')
+        raise e
+    print('Successfully created or read enriched directory.')
+
     print('\nReading parquet files...')
     try:
         companies_file_path = os.path.join(RAW_PARQUET_DIR, 'companies.parquet')
@@ -39,7 +48,7 @@ def main():
         selected_companies = companies.filter(pl.col('Company Name').is_in(COMPANIES))
         SIMFIN_IDS = [id for id in selected_companies['SimFinId']]
         share_prices = share_prices.filter(pl.col('SimFinId').is_in(SIMFIN_IDS))
-        print(f'Fetched {len(selected)} rows for {len(COMPANIES)} companies.')
+        print(f'Fetched {len(selected_companies)} rows for {len(COMPANIES)} companies.')
     except Exception as e:
         print('Failed to filter dataframes. Raising exception...')
         raise e

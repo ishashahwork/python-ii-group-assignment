@@ -10,6 +10,16 @@ PARQUET_DIR = os.path.join(RAW_DATA_DIR, 'parquet')
 def main():
     print('\nStarting data ingestion...')
 
+    print('Creating or reading ETL directories...')
+    try:
+        os.makedirs(ETL_DIR, exist_ok=True)
+        os.makedirs(RAW_DATA_DIR, exist_ok=True)
+        os.makedirs(PARQUET_DIR, exist_ok=True)
+    except Exception as e:
+        print('Failed to create ETL directories. Raising exception.')
+        raise e
+    print('Successfully created or read ETL directories.')
+
     print('\nLoading environment variables...')
     try:
         load_dotenv()
