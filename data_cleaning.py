@@ -9,6 +9,7 @@ ENRICHED_PARQUET_DIR = os.path.join('ETL', 'data', 'enriched', 'parquet')
 def main():
     print('\nStarting data cleaning...')
 
+
     print('\nLoading configuration...')
     try:
         config_file_path = Path("config.toml")
@@ -22,6 +23,7 @@ def main():
         raise e
     print('Successfully loaded configuration.')
 
+
     print('\nCreating or reading enriched directory...')
     try:
         os.makedirs(ENRICHED_PARQUET_DIR, exist_ok=True)
@@ -29,6 +31,7 @@ def main():
         print('Failed to create enriched directory. Raising exception...')
         raise e
     print('Successfully created or read enriched directory.')
+
 
     print('\nReading parquet files...')
     try:
@@ -42,30 +45,39 @@ def main():
         raise e
     print('Successfully loaded parquet files.')
 
+
     print('\nFiltering down to selected companies...')
     try:
         print(f'Selected companies: {COMPANIES}')
-        selected_companies = companies.filter(pl.col('Company Name').is_in(COMPANIES))
-        SIMFIN_IDS = [id for id in selected_companies['SimFinId']]
-        share_prices = share_prices.filter(pl.col('SimFinId').is_in(SIMFIN_IDS))
-        print(f'Fetched {len(selected_companies)} rows for {len(COMPANIES)} companies.')
+        company_dfs = {}
+
+        for company in COMPANIES:
+            selected_company = companies.filter(pl.col('Company Name') == company)
+            SIMFIN_ID = selected_company['SimFinId'].item()
+            company_dfs[company] = share_prices.filter(pl.col('SimFinId') == SIMFIN_ID)
+            print(f'Fetched {len(selected_company)} rows for {company}.')
+
     except Exception as e:
         print('Failed to filter dataframes. Raising exception...')
         raise e
     print('Successfully filtered dataframes.')
 
+
     print('\nDropping unnecessary columns...')
     try:
-        share_prices = share_prices.drop(pl.col('Dividend'), pl.col('SimFinId'))
+        for company in COMPANIES:
+            company_dfs[company] = company_dfs[company].drop(pl.col('Dividend'), pl.col('SimFinId'))
     except Exception as e:
         print('Failed to drop columns. Raising exception...')
         raise e
     print('Successfully dropped columns.')
 
+
     print(f'\nSaving to parquet at {ENRICHED_PARQUET_DIR}...')
     try:
-        file_path = os.path.join(ENRICHED_PARQUET_DIR, 'share_prices_enriched.parquet')
-        share_prices.write_parquet(file_path)
+        for company in COMPANIES:
+            file_path = os.path.join(ENRICHED_PARQUET_DIR, f'{company}_share_prices_enriched.parquet')
+            company_dfs[company].write_parquet(file_path)
     except Exception as e:
         print('Failed to save to parquet. Raising exception...')
         raise e
