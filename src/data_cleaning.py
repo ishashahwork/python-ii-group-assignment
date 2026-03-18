@@ -3,9 +3,6 @@ from pathlib import Path
 import os
 import polars as pl
 
-RAW_PARQUET_DIR = os.path.join('ETL', 'data', 'raw', 'parquet')
-ENRICHED_PARQUET_DIR = os.path.join('ETL', 'data', 'enriched', 'parquet')
-
 def main():
     print('\nStarting data cleaning...')
 
@@ -16,7 +13,9 @@ def main():
 
         with config_file_path.open("rb") as config_file:
             config = tomllib.load(config_file)
-
+        
+        RAW_PARQUET_DIR = os.path.join(config['BRONZE_DIR'], 'parquet')
+        ENRICHED_PARQUET_DIR = os.path.join(config['SILVER_DIR'], 'parquet')
         COMPANIES = config['companies']
     except Exception as e:
         print('Failed to load configuration. Raising exception...')
@@ -24,13 +23,13 @@ def main():
     print('Successfully loaded configuration.')
 
 
-    print('\nCreating or reading enriched directory...')
+    print('\nCreating or reading silver directory...')
     try:
         os.makedirs(ENRICHED_PARQUET_DIR, exist_ok=True)
     except Exception as e:
-        print('Failed to create enriched directory. Raising exception...')
+        print('Failed to create silver directory. Raising exception...')
         raise e
-    print('Successfully created or read enriched directory.')
+    print('Successfully created or read silver directory.')
 
 
     print('\nReading parquet files...')
@@ -76,12 +75,13 @@ def main():
     print(f'\nSaving to parquet at {ENRICHED_PARQUET_DIR}...')
     try:
         for company in COMPANIES:
-            file_path = os.path.join(ENRICHED_PARQUET_DIR, f'{company}_share_prices_enriched.parquet')
+            file_path = os.path.join(ENRICHED_PARQUET_DIR, f'{company}_share_prices_cleaned.parquet')
             company_dfs[company].write_parquet(file_path)
     except Exception as e:
         print('Failed to save to parquet. Raising exception...')
         raise e
     print('Successfully saved to parquet.')
+    
     
     print('\nData cleaning process finished.')
 

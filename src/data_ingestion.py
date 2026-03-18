@@ -2,23 +2,39 @@ from dotenv import load_dotenv
 import os
 import simfin as sf
 import polars as pl
-
-ETL_DIR = 'ETL'
-RAW_DATA_DIR = os.path.join(ETL_DIR, 'data', 'raw')
-PARQUET_DIR = os.path.join(RAW_DATA_DIR, 'parquet')
+from pathlib import Path
 
 def main():
     print('\nStarting data ingestion...')
+
+
+    print('\nLoading configuration...')
+    try:
+        config_file_path = Path("config.toml")
+
+        with config_file_path.open("rb") as config_file:
+            config = tomllib.load(config_file)
+
+        ETL_DIR = config['ETL_DIR']
+        RAW_DATA_DIR = config['BRONZE_DIR']
+        RAW_PARQUET_DIR = os.path.join(config['BRONZE_DIR'], 'parquet')
+
+    except Exception as e:
+        print('Failed to load configuration. Raising exception...')
+        raise e
+    print('Successfully loaded configuration.')
+
 
     print('Creating or reading ETL directories...')
     try:
         os.makedirs(ETL_DIR, exist_ok=True)
         os.makedirs(RAW_DATA_DIR, exist_ok=True)
-        os.makedirs(PARQUET_DIR, exist_ok=True)
+        os.makedirs(RAW_PARQUET_DIR, exist_ok=True)
     except Exception as e:
         print('Failed to create ETL directories. Raising exception.')
         raise e
     print('Successfully created or read ETL directories.')
+
 
     print('\nLoading environment variables...')
     try:
@@ -30,6 +46,7 @@ def main():
         raise e
     print('Environment variables loaded successfully.')
 
+
     print(f'\nLoading company data into {RAW_DATA_DIR}...')
     try:
         pd_companies = sf.load_companies(market='us')
@@ -38,6 +55,7 @@ def main():
         print('Failed to load company data. Raising exception.')
         raise e
     print('Successfully loaded company data.')
+
 
     print('\nLoading share prices...')
     try:
@@ -48,17 +66,20 @@ def main():
         raise e
     print('Successfully loaded share prices.')
 
-    print(f'\nSaving to parquet at {PARQUET_DIR}...')
+
+    print(f'\nSaving to parquet at {RAW_PARQUET_DIR}...')
     try:
-        share_prices_file_path = os.path.join(PARQUET_DIR, 'share_prices.parquet')
+        share_prices_file_path = os.path.join(RAW_PARQUET_DIR, 'share_prices.parquet')
         pl_share_prices.write_parquet(share_prices_file_path)
 
-        companies_file_path = os.path.join(PARQUET_DIR, 'companies.parquet')
+        companies_file_path = os.path.join(RAW_PARQUET_DIR, 'companies.parquet')
         pl_companies.write_parquet(companies_file_path)
     except Exception as e:
         print('Failed to save to parquet. Raising exception.')
         raise e
     print('\nSuccessfully saved data to parquet.')
+
+
     print('\nData ingestion process finished.')
 
 if __name__ == '__main__':
