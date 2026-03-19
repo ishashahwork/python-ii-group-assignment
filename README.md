@@ -56,7 +56,7 @@ That makes `manage.py` the recommended way to run the project.
 
 ## Requirements
 
-The repository requires Python 3.11 or newer and includes the following Python dependencies in `requirements.txt`:
+The repository requires Python 3.11 and includes the following Python dependencies in `requirements.txt`:
 
 - `pandas==2.2.3`
 - `simfin`
